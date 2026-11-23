@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grid Designer v1.9 · Grid irregular</title>
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--ink:#17212b;--muted:#647180;--line:#dce2e8;--accent:#e46b32;--accent-dark:#bd4e1d;--blue:#2777c7;--shadow:0 8px 24px rgba(20,32,45,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input{font:inherit}button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:9px 13px;cursor:pointer;font-weight:600}button:hover{border-color:#aab5c0;background:#fafbfc}button:disabled{opacity:.42;cursor:not-allowed}
+.primary{background:var(--accent);border-color:var(--accent);color:#fff}.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.active{background:#fff0e8;border-color:var(--accent);color:#b84c1d}
+header{height:66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:18px;letter-spacing:-.4px}.logo{width:32px;height:32px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:white;font-weight:900}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+main{max-width:1440px;margin:22px auto;padding:0 20px;display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px}
+.workspace,.sidebar{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.workspace{min-width:0;overflow:hidden}.toolbar{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tool-label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}.tool-sep{height:26px;width:1px;background:var(--line);margin:0 3px}
+.stage-wrap{padding:18px;background:#e9edf1;min-height:570px;display:grid;place-items:center;position:relative}
+.stage{position:relative;max-width:100%;max-height:72vh;line-height:0;user-select:none;touch-action:none}.stage img{display:block;max-width:100%;max-height:72vh;object-fit:contain;pointer-events:none}.stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+.empty{width:min(680px,100%);min-height:350px;border:2px dashed #b8c3ce;border-radius:14px;display:grid;place-items:center;text-align:center;padding:30px;color:var(--muted);background:rgba(255,255,255,.65)}.empty strong{display:block;color:var(--ink);font-size:19px;margin:10px 0 5px}.empty .big{font-size:38px;color:var(--accent)}
+.statusbar{border-top:1px solid var(--line);padding:10px 15px;display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}
+.sidebar{padding:17px;height:max-content;display:flex;flex-direction:column;gap:17px}.section-title{font-weight:800;font-size:14px;margin:0 0 9px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input,.field select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;background:#f7f8fa;color:var(--ink)}.locked{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.info{background:#fff7f2;border:1px solid #f3d3c2;color:#81401f;border-radius:9px;padding:10px;font-size:12px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f6f8fa;border-radius:9px;padding:10px}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{font-size:20px}
+.cssbox{width:100%;min-height:180px;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:10px;background:#111a24;color:#dce8f4;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+.row{display:flex;gap:8px}.row>*{flex:1}.hint{font-size:12px;color:var(--muted);margin:0}.hidden{display:none!important}
+.modal-backdrop{position:fixed;inset:0;background:rgba(12,20,28,.55);display:grid;place-items:center;padding:20px;z-index:10}.modal{background:#fff;border-radius:14px;padding:22px;width:min(420px,100%);box-shadow:0 20px 70px #0003}.modal h2{margin:0 0 6px;font-size:20px}.modal p{margin:0 0 17px;color:var(--muted);font-size:13px}.modal input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px}
+@media(max-width:900px){main{grid-template-columns:1fr}.sidebar{order:-1}.stage-wrap{min-height:350px}header{padding:0 14px}.header-actions button{padding:8px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="logo">G</div><span>Grid Designer <span style="color:var(--muted);font-weight:500">/ DAW</span></span></div>
+ <div class="header-actions">
+  <button id="newBtn">Nuevo</button><button id="importBtn">Importar JSON</button><button id="exportBtn" disabled>Exportar JSON</button>
+  <input id="jsonFile" type="file" accept=".json,application/json" class="hidden">
+ </div>
+</header>
+<main>
+ <section class="workspace">
+  <div class="toolbar">
+   <span class="tool-label">Herramientas</span>
+   <button id="uploadBtn" class="primary">＋ Cargar imagen</button>
+   <input id="imageFile" type="file" accept="image/*" class="hidden">
+   <span class="tool-sep"></span>
+   <button class="tool" data-tool="zone" disabled>① Dibujar zona</button>
+   <button class="tool" data-tool="vline" disabled>↕ Línea vertical</button>
+   <button class="tool" data-tool="hline" disabled>↔ Línea horizontal</button>
+   <button class="tool" data-tool="select" disabled>↖ Mover</button>
+   <button id="deleteBtn" disabled>Eliminar línea</button>
+   <span class="tool-sep"></span>
+   <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><input type="checkbox" id="irregularMode" disabled> Activar Grid irregular</label>
+   <button class="tool" data-tool="erase" disabled>⌫ Borrar tramo</button>
+  </div>
+  <div class="stage-wrap">
+   <div id="empty" class="empty"><div><div class="big">▧</div><strong>Carga una captura de una web</strong><span>Después delimita con el ratón la sección concreta en la que quieres practicar CSS Grid.</span><p style="margin-top:18px"><button id="emptyUpload" class="primary">Seleccionar imagen</button></p></div></div>
+   <div id="stage" class="stage hidden"><img id="photo" alt="Imagen de trabajo"><canvas id="overlay"></canvas></div>
+  </div>
+  <div class="statusbar"><span id="status">Carga una imagen para comenzar.</span><span id="dimensions">—</span></div>
+ </section>
+ <aside class="sidebar">
+  <div>
+   <h3 class="section-title">Alumno</h3>
+   <div class="field"><label>Nombre y apellidos</label><input id="student" placeholder="Se solicita al cargar la imagen" disabled><div class="locked">🔒 El nombre queda bloqueado al iniciar el proyecto.</div></div>
+  </div>
+  <div>
+   <h3 class="section-title">Cuadrícula</h3>
+   <div class="stats"><div class="stat"><small>Columnas</small><b id="colCount">0</b></div><div class="stat"><small>Filas</small><b id="rowCount">0</b></div></div>
+   <p class="hint" style="margin-top:9px">Dibuja primero una zona. Después añade líneas completas de lado a lado. Arrastra una línea para cambiar su posición.</p>
+  </div>
+  <div class="info"><b>Consejo:</b> selecciona «Dibujar zona» y arrastra sobre la imagen. La zona será el contenedor Grid; no es necesario aplicar Grid a toda la página.</div>
+  <div>
+   <h3 class="section-title">CSS generado</h3>
+   <textarea id="cssOutput" class="cssbox" readonly spellcheck="false" placeholder="El CSS aparecerá aquí cuando dibujes la zona Grid."></textarea>
+   <label class="hint" style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer"><input type="checkbox" id="simpleFr" checked disabled> Simplificar valores fr (saltos de 0,5)</label>
+   <div class="row" style="margin-top:8px"><button id="generateBtn" disabled>Generar CSS y HTML</button><button id="copyBtn" disabled>Copiar CSS</button></div>
+  </div>
+  <div>
+   <h3 class="section-title">Estructura HTML</h3>
+   <div class="field"><label for="gridTag">Elemento raíz del Grid</label><select id="gridTag"><option value="div" selected>div</option><option value="section">section</option><option value="main">main</option></select></div>
+   <div class="field" style="margin-top:8px"><label for="gridClass">Clase CSS del Grid</label><input id="gridClass" value="mi-grid" maxlength="60" placeholder="mi-grid"></div>
+   <div class="field" style="margin-top:12px"><label for="containerTag">Elemento de los contenedores</label><select id="containerTag"><option value="div" selected>div</option><option value="article">article</option></select></div>
+   <div class="field" style="margin-top:8px"><label for="containerClass">Clase base de los contenedores</label><input id="containerClass" value="contenedor" maxlength="60" placeholder="contenedor"><p class="hint">Se numerará automáticamente: contenedor1, contenedor2...</p></div>
+  </div>
+  <div>
+   <h3 class="section-title">HTML interior generado</h3>
+   <textarea id="htmlOutput" class="cssbox" readonly spellcheck="false" placeholder="Aquí aparecerán los contenedores del Grid." style="min-height:150px"></textarea>
+   <div class="row" style="margin-top:8px"><button id="copyHtmlBtn" disabled>Copiar HTML</button></div>
+  </div>
+  <p class="hint">Los proyectos JSON incluyen la imagen, el alumno, las líneas y los tramos eliminados del Grid irregular.</p>
+ </aside>
+</main>
+<div id="nameModal" class="modal-backdrop hidden">
+ <div class="modal"><h2>Identificación del alumno</h2><p>Escribe tu nombre y apellidos. Quedarán asociados al proyecto y no podrán modificarse desde el editor.</p><input id="nameInput" maxlength="100" placeholder="Nombre y apellidos" autocomplete="name"><button id="confirmName" class="primary" style="width:100%">Continuar</button></div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const canvas=$('overlay'),ctx=canvas.getContext('2d'),photo=$('photo'),stage=$('stage');
+let imageData=null,student='',zone=null,zoneReady=false,lines=[],removedSegments=[],tool='zone',drag=null,selected=null,displayScale=1;
+const setStatus=t=>$('status').textContent=t;
+function setTools(on){document.querySelectorAll('.tool').forEach(b=>{const t=b.dataset.tool;const irregular=t==='erase';b.disabled=!on||(t!=='zone'&&!zoneReady)||(irregular&&!$('irregularMode').checked);});$('irregularMode').disabled=!on||!zoneReady;$('deleteBtn').disabled=!on||selected===null;$('exportBtn').disabled=!on;$('generateBtn').disabled=!on;}
+function setTool(t){if(t==='erase'&&!$('irregularMode').checked)return;tool=t;document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));setStatus(({zone:'Arrastra para delimitar la zona Grid.',vline:'Arrastra desde el borde superior al inferior para añadir una columna.',hline:'Arrastra desde el borde izquierdo al derecho para añadir una fila.',select:'Selecciona y arrastra una línea para moverla.',erase:'Haz clic sobre un tramo interior para unir dos contenedores rectangulares. Las uniones en L no están permitidas.'})[t]);}
+document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+function upload(){if(imageData && !confirm('¿Empezar un proyecto nuevo? Se perderá el trabajo actual si no lo has exportado.'))return;$('imageFile').click();}
+$('uploadBtn').onclick=upload;$('emptyUpload').onclick=upload;
+$('imageFile').onchange=e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Selecciona un archivo de imagen.');return;}const r=new FileReader();r.onload=()=>{imageData=r.result;photo.onload=()=>{zone=null;zoneReady=false;lines=[];removedSegments=[];selected=null;student='';$('student').value='';$('cssOutput').value='';$('htmlOutput').value='';$('empty').classList.add('hidden');stage.classList.remove('hidden');$('nameModal').classList.remove('hidden');$('nameInput').value='';resizeCanvas();setTools(true);setTool('zone');};photo.src=imageData;};r.readAsDataURL(f);e.target.value='';};
+$('confirmName').onclick=()=>{const n=$('nameInput').value.trim();if(!n){alert('Introduce nombre y apellidos.');return;}student=n;$('student').value=n;$('nameModal').classList.add('hidden');setStatus('Ahora delimita la única zona Grid de esta imagen.');};
+function resizeCanvas(){const w=photo.clientWidth,h=photo.clientHeight;if(!w||!h)return;canvas.width=Math.round(w*devicePixelRatio);canvas.height=Math.round(h*devicePixelRatio);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw();}
+function pos(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+function norm(p){return {x:p.x/canvas.clientWidth,y:p.y/canvas.clientHeight};}
+function denorm(p){return {x:p.x*canvas.clientWidth,y:p.y*canvas.clientHeight};}
+function bounds(){if(!zone)return null;const a=denorm(zone.a),b=denorm(zone.b);return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(b.x-a.x),h:Math.abs(b.y-a.y)};}
+function gridModel(){
+ const vs=lines.filter(l=>l.o==='v').map(l=>l.p).sort((a,b)=>a-b);
+ const hs=lines.filter(l=>l.o==='h').map(l=>l.p).sort((a,b)=>a-b);
+ const xs=[0,...vs,1],ys=[0,...hs,1],cols=xs.length-1,rows=ys.length-1;
+ const parent=Array.from({length:rows*cols},(_,i)=>i);
+ const find=x=>parent[x]===x?x:(parent[x]=find(parent[x]));
+ const join=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};
+ const removed=new Set(removedSegments);
+ for(const key of removed){
+  const [o,rs,cs]=key.split(':');const r=+rs,c=+cs;
+  if(o==='v'&&c>0&&c<cols&&r>=0&&r<rows)join(r*cols+c-1,r*cols+c);
+  if(o==='h'&&r>0&&r<rows&&c>=0&&c<cols)join((r-1)*cols+c,r*cols+c);
+ }
+ const map=new Map();
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+  const id=find(r*cols+c);if(!map.has(id))map.set(id,{cells:[],r0:r,r1:r,c0:c,c1:c});
+  const a=map.get(id);a.cells.push([r,c]);a.r0=Math.min(a.r0,r);a.r1=Math.max(a.r1,r);a.c0=Math.min(a.c0,c);a.c1=Math.max(a.c1,c);
+ }
+ const areas=[...map.values()].map((a,i)=>({...a,id:i+1,rectangular:a.cells.length===(a.r1-a.r0+1)*(a.c1-a.c0+1)}));
+ return {xs,ys,cols,rows,areas,removed};
+}
+function segmentKey(o,r,c){return `${o}:${r}:${c}`;}
+function segmentAt(p){
+ const z=bounds();if(!z||!$('irregularMode').checked)return null;
+ const m=gridModel(),px=m.xs.map(v=>z.x+v*z.w),py=m.ys.map(v=>z.y+v*z.h);
+ const areaByCell=Array.from({length:m.rows},()=>Array(m.cols).fill(null));
+ for(const area of m.areas)for(const [r,c] of area.cells)areaByCell[r][c]=area;
+ let best=null,bestD=9;
+ const pairAt=(a,b)=>a&&b&&a.id!==b.id?[Math.min(a.id,b.id),Math.max(a.id,b.id)].join(':'):null;
+
+ // Vertical boundary: combine consecutive elementary segments that now form
+ // one uninterrupted boundary between the same two irregular areas.
+ for(let c=1;c<m.cols;c++){
+  let r=0;
+  while(r<m.rows){
+   const key=segmentKey('v',r,c),pair=m.removed.has(key)?null:pairAt(areaByCell[r][c-1],areaByCell[r][c]);
+   if(!pair){r++;continue;}
+   let end=r;
+   while(end+1<m.rows){
+    const nextKey=segmentKey('v',end+1,c);
+    const nextPair=m.removed.has(nextKey)?null:pairAt(areaByCell[end+1][c-1],areaByCell[end+1][c]);
+    if(nextPair!==pair)break;
+    end++;
+   }
+   const x=px[c],y0=py[r],y1=py[end+1];
+   if(p.y>=y0-3&&p.y<=y1+3){
+    const d=Math.abs(p.x-x);
+    if(d<bestD){
+     const areaIds=pair.split(':').map(Number);
+     bestD=d;best={o:'v',r,c,start:r,end,keys:Array.from({length:end-r+1},(_,i)=>segmentKey('v',r+i,c)),areaIds};
+    }
+   }
+   r=end+1;
+  }
+ }
+ // Horizontal boundary: same logic, but combine consecutive segments across columns.
+ for(let r=1;r<m.rows;r++){
+  let c=0;
+  while(c<m.cols){
+   const key=segmentKey('h',r,c),pair=m.removed.has(key)?null:pairAt(areaByCell[r-1][c],areaByCell[r][c]);
+   if(!pair){c++;continue;}
+   let end=c;
+   while(end+1<m.cols){
+    const nextKey=segmentKey('h',r,end+1);
+    const nextPair=m.removed.has(nextKey)?null:pairAt(areaByCell[r-1][end+1],areaByCell[r][end+1]);
+    if(nextPair!==pair)break;
+    end++;
+   }
+   const y=py[r],x0=px[c],x1=px[end+1];
+   if(p.x>=x0-3&&p.x<=x1+3){
+    const d=Math.abs(p.y-y);
+    if(d<bestD){
+     const areaIds=pair.split(':').map(Number);
+     bestD=d;best={o:'h',r,c,start:c,end,keys:Array.from({length:end-c+1},(_,i)=>segmentKey('h',r,c+i)),areaIds};
+    }
+   }
+   c=end+1;
+  }
+ }
+ return best;
+}
+function canMergeSegment(hit){
+ const m=gridModel(),byId=new Map(m.areas.map(a=>[a.id,a]));
+ const a=byId.get(hit.areaIds?.[0]),b=byId.get(hit.areaIds?.[1]);
+ if(!a||!b)return false;
+ const cells=[...a.cells,...b.cells],rr=cells.map(x=>x[0]),cc=cells.map(x=>x[1]);
+ const r0=Math.min(...rr),r1=Math.max(...rr),c0=Math.min(...cc),c1=Math.max(...cc);
+ return cells.length===(r1-r0+1)*(c1-c0+1);
+}
+function draw(){
+ if(!canvas.width)return;
+ ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+ if(!zone)return;
+ const z=bounds(),m=gridModel();
+ ctx.save();ctx.fillStyle='rgba(20,30,40,.28)';ctx.beginPath();ctx.rect(0,0,canvas.clientWidth,canvas.clientHeight);ctx.rect(z.x,z.y,z.w,z.h);ctx.fill('evenodd');
+ ctx.strokeStyle='#e46b32';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.strokeRect(z.x,z.y,z.w,z.h);ctx.setLineDash([]);
+ const px=m.xs.map(v=>z.x+v*z.w),py=m.ys.map(v=>z.y+v*z.h);
+ // Vertical separators: draw only segments that have not been removed.
+ for(let c=1;c<m.cols;c++)for(let r=0;r<m.rows;r++){
+  if(m.removed.has(segmentKey('v',r,c)))continue;
+  const selectedLine=selected!==null&&lines[selected]&&lines[selected].o==='v'&&Math.abs(lines[selected].p-m.xs[c])<1e-6;
+  ctx.beginPath();ctx.moveTo(px[c],py[r]);ctx.lineTo(px[c],py[r+1]);ctx.strokeStyle=selectedLine?'#ffb000':'#1876c9';ctx.lineWidth=selectedLine?4:2.5;ctx.stroke();
+ }
+ // Horizontal separators.
+ for(let r=1;r<m.rows;r++)for(let c=0;c<m.cols;c++){
+  if(m.removed.has(segmentKey('h',r,c)))continue;
+  const selectedLine=selected!==null&&lines[selected]&&lines[selected].o==='h'&&Math.abs(lines[selected].p-m.ys[r])<1e-6;
+  ctx.beginPath();ctx.moveTo(px[c],py[r]);ctx.lineTo(px[c+1],py[r]);ctx.strokeStyle=selectedLine?'#ffb000':'#1876c9';ctx.lineWidth=selectedLine?4:2.5;ctx.stroke();
+ }
+ // Labels: one per rectangular area, in reading order.
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 12px system-ui, sans-serif';
+ m.areas.sort((a,b)=>a.r0-b.r0||a.c0-b.c0).forEach((a,i)=>{
+  const cx=(px[a.c0]+px[a.c1+1])/2,cy=(py[a.r0]+py[a.r1+1])/2,label=containerBase()+(i+1);
+  const tw=ctx.measureText(label).width,pad=7,bw=tw+pad*2,bh=23;
+  ctx.fillStyle='rgba(255,255,255,.72)';ctx.fillRect(cx-bw/2,cy-bh/2,bw,bh);
+  ctx.fillStyle='rgba(20,32,43,.68)';ctx.fillText(label,cx,cy);
+ });
+ ctx.restore();updateStats();
+}
+function lineAt(p,orientation=null){const z=bounds();if(!z)return -1;let best=-1,dist=10;lines.forEach((l,i)=>{if(orientation&&l.o!==orientation)return;const q=l.o==='v'?z.x+l.p*z.w:z.y+l.p*z.h;const d=Math.abs((l.o==='v'?p.x:p.y)-q);if(d<dist && p.x>=z.x-5&&p.x<=z.x+z.w+5&&p.y>=z.y-5&&p.y<=z.y+z.h+5){dist=d;best=i;}});return best;}
+function updateStats(){const v=lines.filter(l=>l.o==='v').length,h=lines.filter(l=>l.o==='h').length;$('colCount').textContent=v+1;$('rowCount').textContent=h+1;$('deleteBtn').disabled=selected===null||removedSegments.length>0;}
+function pointerDown(e){if(!imageData||$('nameModal').classList.contains('hidden')===false)return;const p=pos(e);canvas.setPointerCapture(e.pointerId);
+if(tool==='erase'){const hit=segmentAt(p);if(!hit){setStatus('No hay un tramo interior seleccionable en ese punto.');return;}if(!canMergeSegment(hit)){setStatus('No se puede borrar: la unión formaría una L o una forma no rectangular.');return;}removedSegments.push(...hit.keys);setTools(true);draw();updateCSS();setStatus(hit.keys.length>1?'División continua eliminada completa. Se han unido dos contenedores rectangulares.':'Tramo eliminado. Se han unido dos contenedores rectangulares.');return;}
+if(tool==='zone'){drag={kind:'zone',start:p};zone={a:norm(p),b:norm(p)};zoneReady=false;lines=[];removedSegments=[];selected=null;setTools(true);draw();}
+else if(!zone){setStatus('Primero debes dibujar la zona Grid.');return;}
+else if(removedSegments.length && tool!=='erase'){setStatus('Para conservar las fusiones irregulares, no se pueden añadir ni mover líneas mientras haya tramos eliminados. Dibuja de nuevo la zona para reiniciar.');return;}
+else if(tool==='vline'||tool==='hline'){
+ const z=bounds();if(p.x<z.x||p.x>z.x+z.w||p.y<z.y||p.y>z.y+z.h)return;
+ const near=lineAt(p,tool==='vline'?'v':'h');
+ if(near>=0){selected=near;drag={kind:'move',i:near};setStatus('Línea seleccionada: arrastra para moverla o pulsa «Eliminar línea».');}
+ else{drag={kind:'new',o:tool==='vline'?'v':'h',start:p};}
+ draw();
+}
+else {const i=lineAt(p);selected=i;if(i>=0){drag={kind:'move',i};}else{setStatus('Haz clic cerca de una línea para moverla.');}draw();}}
+function pointerMove(e){if(!drag)return;const p=pos(e);if(drag.kind==='zone'){zone.b=norm(p);draw();}else if(drag.kind==='new'){drawPreviewLine(p);}else if(drag.kind==='move'){const z=bounds(),l=lines[drag.i];let value=l.o==='v'?(p.x-z.x)/z.w:(p.y-z.y)/z.h;const same=lines.filter((x,i)=>x.o===l.o&&i!==drag.i).map(x=>x.p).sort((a,b)=>a-b);const min=Math.max(.02,(same.filter(x=>x<l.p).pop()??0)+.02),max=Math.min(.98,(same.find(x=>x>l.p)??1)-.02);l.p=Math.max(min,Math.min(max,value));draw();}}
+function drawPreviewLine(p){draw();const z=bounds();if(!z)return;ctx.save();ctx.strokeStyle='#35a36b';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();if(drag.o==='v'){const x=Math.max(z.x,Math.min(z.x+z.w,p.x));ctx.moveTo(x,z.y);ctx.lineTo(x,z.y+z.h)}else{const y=Math.max(z.y,Math.min(z.y+z.h,p.y));ctx.moveTo(z.x,y);ctx.lineTo(z.x+z.w,y)}ctx.stroke();ctx.restore();}
+function pointerUp(e){if(!drag)return;const p=pos(e);if(drag.kind==='zone'){const z=bounds();if(z.w<20||z.h<20){zone=null;zoneReady=false;setStatus('La zona es demasiado pequeña. Vuelve a dibujarla.');}else{zoneReady=true;setStatus('Zona creada. Ya puedes añadir líneas verticales y horizontales.');setTools(true);setTool('vline');}}
+else if(drag.kind==='new'){const z=bounds(),o=drag.o;let value=o==='v'?(p.x-z.x)/z.w:(p.y-z.y)/z.h;value=Math.max(.03,Math.min(.97,value));const collision=lines.some(l=>l.o===o&&Math.abs(l.p-value)<.025);if(!collision){lines.push({o,p:value});selected=lines.length-1;setStatus(o==='v'?'Columna añadida.':'Fila añadida.');}else setStatus('Ya hay una línea demasiado cerca.');}
+drag=null;draw();updateCSS();}
+canvas.addEventListener('pointerdown',pointerDown);canvas.addEventListener('pointermove',pointerMove);canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointercancel',()=>{drag=null;draw();});
+$('deleteBtn').onclick=()=>{if(selected===null||removedSegments.length)return;lines.splice(selected,1);selected=null;draw();updateCSS();setStatus('Línea eliminada.');};
+function gridTracks(){
+ if(!zone)return null;
+ const m=gridModel(),bx=m.xs,by=m.ys;
+ const widths=bx.slice(1).map((x,i)=>x-bx[i]),heights=by.slice(1).map((y,i)=>y-by[i]);
+ const fr=a=>{
+  if($('simpleFr').checked){const smallest=Math.min(...a);return a.map(x=>Math.max(.5,Math.round((x/smallest)*2)/2)+'fr').join(' ');}
+  return a.map(x=>Math.max(.01,x*100).toFixed(2)+'fr').join(' ');
+ };
+ const areas=m.areas.sort((a,b)=>a.r0-b.r0||a.c0-b.c0);
+ return {columns:fr(widths),rows:fr(heights),cols:m.cols,rowCount:m.rows,areas};
+}
+function gridTag(){return $('gridTag').value;}
+function containerTag(){return $('containerTag').value;}
+function gridClass(){return validClass($('gridClass').value,'mi-grid');}
+function containerBase(){return validClass($('containerClass').value,'contenedor');}
+function validClass(value,fallback){const v=(value||'').trim();return /^[A-Za-z_][A-Za-z0-9_-]*$/.test(v)?v:fallback;}
+function css(){
+ const g=gridTracks();if(!g)return '';
+ let out=`.${gridClass()} {\n  display: grid;\n  grid-template-columns: ${g.columns};\n  grid-template-rows: ${g.rows};\n}`;
+ if(removedSegments.length){
+  g.areas.forEach((a,i)=>{
+   const declarations=[];
+   if(a.c0!==a.c1){
+    declarations.push(`  grid-column-start: ${a.c0+1};`,`  grid-column-end: ${a.c1+2};`);
+   }
+   if(a.r0!==a.r1){
+    declarations.push(`  grid-row-start: ${a.r0+1};`,`  grid-row-end: ${a.r1+2};`);
+   }
+   if(!declarations.length)return;
+   out+=`\n\n.${containerBase()}${i+1} {\n${declarations.join('\n')}\n}`;
+  });
+ }
+ return out;
+}
+function markup(){
+ const g=gridTracks();if(!g)return '';
+ const root=gridTag(),child=containerTag(),rootCls=gridClass(),childCls=containerBase();
+ return `<${root} class="${rootCls}">\n${g.areas.map((a,i)=>`  <${child} class="${childCls}${i+1}"></${child}>`).join('\n')}\n</${root}>`;
+}
+function updateCSS(){
+ $('cssOutput').value=css();
+ $('htmlOutput').value=markup();
+ $('copyBtn').disabled=!zone;
+ $('copyHtmlBtn').disabled=!zone;
+}
+$('generateBtn').onclick=()=>{updateCSS();setStatus('CSS y HTML generados.');};
+$('simpleFr').onchange=updateCSS;
+['gridTag','gridClass','containerTag','containerClass'].forEach(id=>{const el=$(id);el.addEventListener('change',updateCSS);el.addEventListener('input',updateCSS);});
+$('irregularMode').onchange=()=>{
+ if(removedSegments.length){$('irregularMode').checked=true;setStatus('El modo Grid irregular debe permanecer activado mientras haya tramos eliminados.');return;}
+ const enabled=$('irregularMode').checked;
+ const eraseBtn=document.querySelector('[data-tool="erase"]');
+ eraseBtn.disabled=!enabled||!zoneReady;
+ if(enabled){setTool('erase');setStatus('Grid irregular activado. Haz clic en una división interior para unir dos áreas rectangulares.');}
+ else{setTool('select');setStatus('Grid irregular desactivado. La cuadrícula vuelve al modo de selección normal.');}
+};
+$('copyBtn').onclick=async()=>{if(!$('cssOutput').value)return;try{await navigator.clipboard.writeText($('cssOutput').value);setStatus('CSS copiado al portapapeles.');}catch{ $('cssOutput').select();document.execCommand('copy');setStatus('CSS copiado.');}};
+$('copyHtmlBtn').onclick=async()=>{if(!$('htmlOutput').value)return;try{await navigator.clipboard.writeText($('htmlOutput').value);setStatus('HTML copiado al portapapeles.');}catch{$('htmlOutput').select();document.execCommand('copy');setStatus('HTML copiado.');}};
+$('exportBtn').onclick=()=>{if(!imageData||!student)return;const data={format:'GridDesigner',version:2,student,image:imageData,zone,lines,removedSegments,htmlOptions:{gridTag:gridTag(),gridClass:gridClass(),containerTag:containerTag(),containerClass:containerBase()}};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='grid-designer-proyecto.json';a.click();URL.revokeObjectURL(a.href);};
+$('importBtn').onclick=()=>$('jsonFile').click();$('jsonFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.format!=='GridDesigner'||![1,2].includes(d.version)||!d.image||!d.student||!Array.isArray(d.lines))throw Error('Formato no válido');imageData=d.image;student=d.student;zone=d.zone||null;zoneReady=!!zone;lines=d.lines;removedSegments=Array.isArray(d.removedSegments)?d.removedSegments:[];const opts=d.htmlOptions||{};$('gridTag').value=['div','section','main'].includes(opts.gridTag)?opts.gridTag:'div';$('gridClass').value=validClass(opts.gridClass,'mi-grid');$('containerTag').value=['div','article'].includes(opts.containerTag)?opts.containerTag:'div';$('containerClass').value=validClass(opts.containerClass,'contenedor');selected=null;photo.onload=()=>{ $('empty').classList.add('hidden');stage.classList.remove('hidden');$('student').value=student;resizeCanvas();$('irregularMode').checked=removedSegments.length>0;setTools(true);setTool(removedSegments.length?'erase':(zone?'select':'zone'));updateCSS();setStatus('Proyecto importado correctamente.');};photo.src=imageData;}catch(err){alert('No se ha podido importar el proyecto: '+err.message);}};r.readAsText(f);e.target.value='';};
+$('newBtn').onclick=()=>{if(!confirm('¿Crear un proyecto nuevo? Exporta antes el actual si quieres conservarlo.'))return;imageData=null;student='';zone=null;zoneReady=false;lines=[];removedSegments=[];selected=null;$('irregularMode').checked=false;$('gridTag').value='div';$('gridClass').value='mi-grid';$('containerTag').value='div';$('containerClass').value='contenedor';stage.classList.add('hidden');$('empty').classList.remove('hidden');$('student').value='';$('cssOutput').value='';$('htmlOutput').value='';$('colCount').textContent='0';$('rowCount').textContent='0';setTools(false);setStatus('Carga una imagen para comenzar.');$('dimensions').textContent='—';};
+window.addEventListener('resize',()=>{if(imageData)resizeCanvas();});
+photo.addEventListener('load',()=>{$('dimensions').textContent=photo.naturalWidth+' × '+photo.naturalHeight+' px';});
+setTools(false);setTool('zone');
+})();
+</script>
+</body>
+</html>
